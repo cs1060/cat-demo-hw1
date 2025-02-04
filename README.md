@@ -3,6 +3,8 @@
 # Issues: Nothing material
 # Hours it took me: 25 minutes
 
+I fixed a bug!
+
 # What I worked on: Chess Game
 
 A simple chess game where you can play against the computer. The computer's move selection is based on a deterministic algorithm that chooses the middle move from all legal moves in alphabetical order.
