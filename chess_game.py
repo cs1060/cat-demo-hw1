@@ -10,7 +10,7 @@ class ChessGame:
         # Get all legal moves
         legal_moves = list(self.board.legal_moves)
         # Convert moves to algebraic notation and sort
-        move_list = sorted([self.board.san(move) for move in legal_moves], key=str.lower)
+        move_list = sorted([self.board.san(move) for move in legal_moves], key=lambda x: x.lower())
         
         # Print all moves
         print("Possible moves:")
@@ -32,7 +32,7 @@ class ChessGame:
             if self.board.san(move) == chosen_san:
                 return move
                 
-    def find_shortest_checkmate(self):
+    def find_shortest_checkmate(self, for_opponent=False):
         print("Choose your color (white/black):")
         while True:
             color = input().lower().strip()
@@ -41,12 +41,18 @@ class ChessGame:
             print("Please enter 'white' or 'black':")
         
         self.player_is_white = color == 'white'
+        
+        # If searching for opponent checkmate, we'll swap who makes the middle move
+        if for_opponent:
+            print(f"\nSearching for fastest checkmate by {'Black' if self.player_is_white else 'White'}...")
+        else:
+            print(f"\nSearching for fastest checkmate by {'White' if self.player_is_white else 'Black'}...")
 
         from collections import deque
         from copy import deepcopy
 
-        # Queue will store (board_state, move_history) tuples
         queue = deque([(deepcopy(self.board), [])])
+
         seen_positions = set()  # Track seen positions to avoid cycles
         checkmate_histories = []  # Store all checkmate sequences
         checkmate_depth = float('inf')
@@ -58,7 +64,10 @@ class ChessGame:
             # If we're starting a new depth and we've found checkmates, we're done
             if len(move_history) > current_depth and checkmate_histories:
                 break
+            if len(move_history) > current_depth:
+                print("Depth: %d\n" % current_depth)
             current_depth = len(move_history)
+
             
             # Skip if we're already deeper than a found checkmate
             if len(move_history) > checkmate_depth:
@@ -73,10 +82,16 @@ class ChessGame:
 
             # Get all legal moves for current position
             legal_moves = list(current_board.legal_moves)
-            move_list = sorted([current_board.san(move) for move in legal_moves], key=str.lower)
+            move_list = sorted([current_board.san(move) for move in legal_moves], key=lambda x: x.lower())
             
-            # If it's computer's turn, only make the middle move
-            if (len(move_history) % 2) == (1 if self.player_is_white else 0):
+            # In opponent mode:
+            # - When it's opponent's turn (the one we're finding checkmates for), use middle move
+            # - When it's player's turn, try all moves
+            # In normal mode:
+            # - When it's opponent's turn, use middle move
+            # - When it's player's turn, try all moves
+            is_opponent_turn = current_board.turn != self.player_is_white
+            if is_opponent_turn:
                 middle_index = len(move_list) // 2
                 move_list = [move_list[middle_index]]
 
@@ -92,8 +107,17 @@ class ChessGame:
 
                         # If this move results in checkmate
                         if new_board.is_checkmate():
-                            checkmate_histories.append(new_history)
-                            checkmate_depth = len(new_history)
+                            # In normal mode: player's color delivers checkmate
+                            # In opponent mode: opponent's color delivers checkmate
+                            winning_color = not new_board.turn  # Color that just moved
+                            if for_opponent:
+                                is_valid_checkmate = (winning_color != self.player_is_white)
+                            else:
+                                is_valid_checkmate = (winning_color == self.player_is_white)
+                            
+                            if is_valid_checkmate:
+                                checkmate_histories.append(new_history)
+                                checkmate_depth = len(new_history)
                         # If no checkmate yet or at same depth as other checkmates, continue searching
                         elif len(new_history) < checkmate_depth:
                             queue.append((new_board, new_history))
@@ -120,14 +144,17 @@ class ChessGame:
             print("Choose game mode:")
             print("1. Play interactively")
             print("2. Find shortest path to checkmate")
+            print("3. Find shortest path for opponent to checkmate")
             try:
-                mode = int(input("Enter 1 or 2: ").strip())
+                mode = int(input("Enter 1, 2, or 3: ").strip())
                 if mode == 1:
                     return self.play_interactive_game()
                 elif mode == 2:
-                    return self.find_shortest_checkmate()
+                    return self.find_shortest_checkmate(for_opponent=False)
+                elif mode == 3:
+                    return self.find_shortest_checkmate(for_opponent=True)
                 else:
-                    print("Invalid choice. Please enter 1 or 2.")
+                    print("Invalid choice. Please enter 1, 2, or 3.")
             except ValueError:
                 print("Please enter a valid number.")
 

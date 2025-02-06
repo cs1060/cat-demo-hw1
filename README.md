@@ -5,7 +5,7 @@
 
 # What I worked on: Chess Game
 
-A simple chess game where you can play against the computer. The computer's move selection is based on a deterministic algorithm that chooses the middle move from all legal moves in alphabetical order.
+A simple chess game where you can play against the computer. The computer's move selection is based on a deterministic algorithm from https://xkcd.com/3045/ that chooses the middle move from all legal moves in alphabetical order.
 
 ## Requirements
 - Python 3.7+
